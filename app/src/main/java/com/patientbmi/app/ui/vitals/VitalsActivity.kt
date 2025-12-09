@@ -20,8 +20,21 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
+/**
+ * This screen is a critical component in the patient assessment workflow where
+ * healthcare providers input height and weight measurements.
+ * Workflow Logic:
+ * 1. Receives patient data from registration or patient listing
+ * 2. User enters height (cm) and weight (kg)
+ * 3. BMI is calculated and displayed in real-time
+ * 4. User submits data to backend API
+ * 5. Based on BMI category, navigates to appropriate assessment form
+ *
+ * Layout: activity_vitals.xml
+ */
 class VitalsActivity : AppCompatActivity() {
 
+    // UI Component References
     private lateinit var tvPatientName: TextView
     private lateinit var etHeight: EditText
     private lateinit var etWeight: EditText
@@ -29,25 +42,36 @@ class VitalsActivity : AppCompatActivity() {
     private lateinit var tvBmiCategory: TextView
     private lateinit var btnSubmit: Button
 
+    // Patient data passed from previous activity
     private lateinit var patientId: String
     private lateinit var patientName: String
 
+    // Logging and async operation management
     private val TAG = "VitalsActivity"
     private var submitJob: Job? = null
     private val handler = Handler(Looper.getMainLooper())
 
+    /**
+     * Initializes the activity, validates incoming patient data,
+     * sets up UI components, and configures event listeners.
+     * Data Validation:
+     * - Ensures patient_id and patient_name are provided
+     * - Logs diagnostic information for debugging
+     * - Finishes activity if patient data is missing
+     */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_vitals)
 
         Log.d(TAG, "=== VitalsActivity onCreate ===")
 
-        // Get patient data from intent
+        // Extract patient data from Intent
         patientId = intent.getStringExtra("patient_id").orEmpty()
         patientName = intent.getStringExtra("patient_name").orEmpty()
 
         Log.d(TAG, "Patient ID: $patientId, Name: $patientName")
 
+        // Validate essential patient data
         if (patientId.isEmpty()) {
             Log.e(TAG, "No patient ID provided!")
             showToast("Error: No patient data")
@@ -55,10 +79,16 @@ class VitalsActivity : AppCompatActivity() {
             return
         }
 
+        // Initialize UI and event handlers
         initViews()
         setupListeners()
     }
 
+    /**
+     * Cleans up resources to prevent memory leaks:
+     * - Cancels any ongoing API calls
+     * - Removes pending handler callbacks
+     */
     override fun onDestroy() {
         super.onDestroy()
         Log.d(TAG, "=== VitalsActivity onDestroy ===")
@@ -68,11 +98,18 @@ class VitalsActivity : AppCompatActivity() {
         handler.removeCallbacksAndMessages(null)
     }
 
+    /**
+     * Handles back button press with logging.
+     */
     override fun onBackPressed() {
         Log.d(TAG, "onBackPressed called")
         super.onBackPressed()
     }
 
+    /**
+     * Binds XML layout components to Kotlin properties and sets
+     * initial display values for BMI fields.
+     */
     private fun initViews() {
         tvPatientName = findViewById(R.id.tvPatientName)
         etHeight = findViewById(R.id.etHeight)
@@ -81,10 +118,10 @@ class VitalsActivity : AppCompatActivity() {
         tvBmiCategory = findViewById(R.id.tvBmiCategory)
         btnSubmit = findViewById(R.id.btnSubmit)
 
-        // Set patient name
+        // Set patient name for context
         tvPatientName.text = "Patient: $patientName"
 
-        // Initialize BMI display
+        // Initialize BMI display with placeholder values
         updateBmiDisplay(0.0, "Enter height & weight")
     }
 
@@ -107,10 +144,14 @@ class VitalsActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Calculates and displays BMI based on current input values.
+     */
     private fun calculateAndDisplayBmi() {
         val heightText = etHeight.text.toString().trim()
         val weightText = etWeight.text.toString().trim()
 
+        // Handle empty inputs
         if (heightText.isEmpty() || weightText.isEmpty()) {
             updateBmiDisplay(0.0, "Enter height & weight")
             return
@@ -120,11 +161,13 @@ class VitalsActivity : AppCompatActivity() {
             val height = heightText.toDouble()
             val weight = weightText.toDouble()
 
+            // Validate positive values
             if (height <= 0 || weight <= 0) {
                 updateBmiDisplay(0.0, "Invalid values")
                 return
             }
 
+            // Calculate BMI and category
             val bmi = calculateBmi(height, weight)
             val category = getBmiCategory(bmi)
 
@@ -135,6 +178,10 @@ class VitalsActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Calculates BMI from height (cm) and weight (kg).
+     * Formula: BMI = weight(kg) / (height(m)²)
+     */
     private fun calculateBmi(heightCm: Double, weightKg: Double): Double {
         val heightM = heightCm / 100.0
         val bmi = weightKg / (heightM * heightM)
@@ -142,6 +189,9 @@ class VitalsActivity : AppCompatActivity() {
         return String.format("%.1f", bmi).toDouble()
     }
 
+    /**
+     * Determines WHO BMI category based on BMI value.
+     */
     private fun getBmiCategory(bmi: Double): String {
         return when {
             bmi < 18.5 -> "Underweight"
@@ -151,13 +201,16 @@ class VitalsActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Updates the BMI display with calculated values and color coding.
+     */
     private fun updateBmiDisplay(bmi: Double, category: String) {
         runOnUiThread {
             if (bmi > 0) {
                 tvBmiValue.text = String.format("BMI: %.1f", bmi)
                 tvBmiCategory.text = category
 
-                // Color code the category
+                // Apply color coding based on category
                 val color = when (category) {
                     "Underweight" -> resources.getColor(android.R.color.holo_orange_light, null)
                     "Normal" -> resources.getColor(android.R.color.holo_green_light, null)
@@ -168,6 +221,7 @@ class VitalsActivity : AppCompatActivity() {
                 tvBmiCategory.setTextColor(color)
 
             } else {
+                // Show placeholder values
                 tvBmiValue.text = "BMI: --"
                 tvBmiCategory.text = category
                 tvBmiCategory.setTextColor(resources.getColor(android.R.color.darker_gray, null))
@@ -175,12 +229,17 @@ class VitalsActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Validates and submits vital measurements to the backend API.
+     * Performs comprehensive validation and makes an asynchronous API call.
+     */
     private fun submitVitals() {
         Log.d(TAG, "=== submitVitals called ===")
 
         val heightText = etHeight.text.toString().trim()
         val weightText = etWeight.text.toString().trim()
 
+        // Basic validation
         if (heightText.isEmpty() || weightText.isEmpty()) {
             showToast("Please enter height and weight")
             return
@@ -190,20 +249,22 @@ class VitalsActivity : AppCompatActivity() {
             val height = heightText.toDouble()
             val weight = weightText.toDouble()
 
+            // Range validation
             if (height <= 0 || weight <= 0) {
                 showToast("Height and weight must be positive numbers")
                 return
             }
 
-            // Calculate BMI (rounded to 1 decimal place)
+            // Calculate BMI and category
             val bmi = calculateBmi(height, weight)
             val bmiCategory = getBmiCategory(bmi)
 
-            // Format visit date
+            // Format current date for visit
             val visitDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
 
             Log.d(TAG, "Creating PatientVital: height=$height, weight=$weight, bmi=$bmi, category=$bmiCategory")
 
+            // Create data transfer object
             val patientVital = PatientVital(
                 patientId = patientId,
                 visitDate = visitDate,
@@ -213,11 +274,11 @@ class VitalsActivity : AppCompatActivity() {
                 bmiStatus = bmiCategory
             )
 
-            // Disable button to prevent multiple submissions
+            // Update UI state to prevent multiple submissions
             btnSubmit.isEnabled = false
             btnSubmit.text = "Submitting..."
 
-            // Store the job so we can cancel it if needed
+            // Launch coroutine for asynchronous API call
             submitJob = lifecycleScope.launch {
                 try {
                     Log.d(TAG, "Starting API call...")
@@ -233,18 +294,18 @@ class VitalsActivity : AppCompatActivity() {
                         runOnUiThread {
                             showToast("Vitals recorded successfully!")
 
-                            // Determine next form based on BMI
+                            // Determine next assessment form based on BMI
                             val nextForm = if (bmi >= 25) "overweight" else "general"
                             Log.d(TAG, "BMI: $bmi, Next form: $nextForm")
 
-                            // Don't call finish() immediately after API call
-                            // Wait a moment for UI updates
+                            // Add delay for better UX before navigation
                             handler.postDelayed({
                                 navigateToNextForm(nextForm, bmi)
                             }, 500)
                         }
 
                     } else {
+                        // Handle API error response
                         val errorBody = response.errorBody()?.string()
                         Log.e(TAG, "API Error: $errorBody")
                         Log.e(TAG, "Error code: ${response.code()}")
@@ -253,6 +314,7 @@ class VitalsActivity : AppCompatActivity() {
                             btnSubmit.isEnabled = true
                             btnSubmit.text = "Submit Vitals"
 
+                            // User-friendly error messages
                             val errorMessage = if (errorBody?.contains("bmi") == true) {
                                 "BMI value error. Please check your values."
                             } else if (errorBody?.contains("5 digits") == true) {
@@ -265,6 +327,7 @@ class VitalsActivity : AppCompatActivity() {
                         }
                     }
                 } catch (e: Exception) {
+                    // Handle network or unexpected errors
                     Log.e(TAG, "Network/Exception error: ${e.message}", e)
 
                     runOnUiThread {
@@ -286,11 +349,17 @@ class VitalsActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Navigates to the appropriate assessment form based on BMI category.
+     * Navigation Logic:
+     * - BMI < 25: GeneralAssessmentActivity
+     * - BMI ≥ 25: OverweightAssessmentActivity
+     */
     private fun navigateToNextForm(nextForm: String, bmi: Double) {
         Log.d(TAG, "navigateToNextForm: $nextForm, BMI: $bmi")
 
         try {
-            // Check if activity is finishing or destroyed
+            // Safety check to prevent navigation on destroyed activity
             if (isFinishing || isDestroyed) {
                 Log.w(TAG, "Activity is finishing/destroyed, not navigating")
                 return
@@ -315,7 +384,7 @@ class VitalsActivity : AppCompatActivity() {
                 }
             }
 
-            // Finish current activity after navigation
+            // Finish current activity after successful navigation
             Log.d(TAG, "Finishing VitalsActivity")
             finish()
 
@@ -328,6 +397,7 @@ class VitalsActivity : AppCompatActivity() {
         }
     }
 
+
     private fun showToast(message: String) {
         runOnUiThread {
             if (!isFinishing && !isDestroyed) {
@@ -336,7 +406,6 @@ class VitalsActivity : AppCompatActivity() {
         }
     }
 
-    // Optional: Test function without API call
     private fun testWithoutApi() {
         Log.d(TAG, "=== Testing without API call ===")
 

@@ -2,6 +2,17 @@ package com.patientbmi.app.data.model
 
 import com.google.gson.annotations.SerializedName
 
+/**
+ * GeneralAssessment model is used to capture and serialize/deserialize general health
+ * assessment data during patient visits.
+ *
+ * @property patientId Unique identifier for the patient
+ * @property visitDate Date of the patient's visit in ISO 8601 format (YYYY-MM-DD)
+ * @property generalHealth Subjective assessment of patient's overall health status
+ * @property currentlyUsingDrugs Flag indicating if patient is currently on medication
+ * @property comments Additional notes from the healthcare provider
+
+ */
 data class GeneralAssessment(
     @SerializedName("patient_id")
     val patientId: String,
