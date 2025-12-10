@@ -1,91 +1,133 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp">
+    android:background="@android:color/white">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:padding="24dp">
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Register New Patient"
+            android:text="Patient Registration"
             android:textSize="24sp"
             android:textStyle="bold"
             android:gravity="center"
-            android:layout_marginBottom="24dp"/>
+            android:textColor="#2E7D32"
+            android:layout_marginBottom="32dp" />
 
-        <!-- First Name -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Patient Number *"
+            android:textSize="16sp"
+            android:textColor="#424242"
+            android:layout_marginBottom="8dp" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilPatientNo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_marginBottom="16dp"
+            app:hintEnabled="false">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etPatientNo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Enter patient number"
+                android:textSize="16sp" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="First Name *"
-            android:layout_marginBottom="4dp"/>
+            android:textSize="16sp"
+            android:textColor="#424242"
+            android:layout_marginBottom="8dp" />
 
-        <EditText
-            android:id="@+id/etFirstName"
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilFirstName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Enter first name"
-            android:inputType="textPersonName"
-            android:layout_marginBottom="16dp"/>
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_marginBottom="16dp"
+            app:hintEnabled="false">
 
-        <!-- Middle Name -->
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etFirstName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Enter first name"
+                android:textSize="16sp" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Middle Name (Optional)"
-            android:layout_marginBottom="4dp"/>
+            android:text="Middle Name (optional)"
+            android:textSize="16sp"
+            android:textColor="#424242"
+            android:layout_marginBottom="8dp" />
 
-        <EditText
-            android:id="@+id/etMiddleName"
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilMiddleName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Enter middle name"
-            android:inputType="textPersonName"
-            android:layout_marginBottom="16dp"/>
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_marginBottom="16dp"
+            app:hintEnabled="false">
 
-        <!-- Last Name -->
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etMiddleName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Enter middle name"
+                android:textSize="16sp" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Last Name *"
-            android:layout_marginBottom="4dp"/>
+            android:textSize="16sp"
+            android:textColor="#424242"
+            android:layout_marginBottom="8dp" />
 
-        <EditText
-            android:id="@+id/etLastName"
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilLastName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Enter last name"
-            android:inputType="textPersonName"
-            android:layout_marginBottom="16dp"/>
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_marginBottom="16dp"
+            app:hintEnabled="false">
 
-        <!-- Date of Birth - CRITICAL -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Date of Birth *"
-            android:layout_marginBottom="4dp"/>
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etLastName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Enter last name"
+                android:textSize="16sp" />
 
-        <EditText
-            android:id="@+id/etDateOfBirth"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="YYYY-MM-DD"
-            android:inputType="date"
-            android:focusable="false"
-            android:clickable="true"
-            android:layout_marginBottom="16dp"/>
+        </com.google.android.material.textfield.TextInputLayout>
 
-        <!-- Gender -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Gender *"
-            android:layout_marginBottom="8dp"/>
+            android:textSize="16sp"
+            android:textColor="#424242"
+            android:layout_marginBottom="8dp" />
 
         <RadioGroup
             android:id="@+id/rgGender"
@@ -94,31 +136,111 @@
             android:orientation="horizontal"
             android:layout_marginBottom="24dp">
 
-            <RadioButton
+            <com.google.android.material.radiobutton.MaterialRadioButton
                 android:id="@+id/rbMale"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="Male"
-                android:checked="true"/>
+                android:textSize="16sp"
+                android:textColor="@color/black"
+                android:buttonTint="#2E7D32"
+                android:layout_marginEnd="16dp" />
 
-            <RadioButton
+            <com.google.android.material.radiobutton.MaterialRadioButton
                 android:id="@+id/rbFemale"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Female"/>
-
+                android:text="Female"
+                android:textSize="16sp"
+                android:textColor="@color/black"
+                android:buttonTint="#2E7D32" />
         </RadioGroup>
 
-        <!-- Submit Button -->
-        <Button
-            android:id="@+id/btnSubmit"
+        <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Register Patient"
-            android:backgroundTint="@color/purple_500"/>
+            android:text="Date of Birth (YYYY-MM-DD) *"
+            android:textSize="16sp"
+            android:textColor="#424242"
+            android:layout_marginBottom="8dp" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilDateOfBirth"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_marginBottom="16dp"
+            app:hintEnabled="false">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etDateOfBirth"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Click to select date"
+                android:textSize="16sp"
+                android:focusable="false"
+                android:clickable="true" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Registration Date (YYYY-MM-DD) *"
+            android:textSize="16sp"
+            android:textColor="#424242"
+            android:layout_marginBottom="8dp" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilRegistrationDate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_marginBottom="32dp"
+            app:hintEnabled="false">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etRegistrationDate"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Click to select date"
+                android:textSize="16sp"
+                android:focusable="false"
+                android:clickable="true" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_horizontal"
+            android:layout_marginTop="16dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCancel"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Cancel"
+                android:textSize="16sp"
+                android:layout_marginEnd="8dp"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                app:cornerRadius="8dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSubmit"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Register Patient"
+                android:textSize="16sp"
+                style="@style/Widget.MaterialComponents.Button"
+                app:cornerRadius="8dp" />
+
+        </LinearLayout>
 
     </LinearLayout>
-
 </ScrollView>

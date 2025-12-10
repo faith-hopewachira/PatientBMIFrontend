@@ -2,6 +2,7 @@ package com.patientbmi.app.ui.patient_registration
 
 import android.app.DatePickerDialog
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import android.widget.*
@@ -10,204 +11,264 @@ import androidx.lifecycle.lifecycleScope
 import com.patientbmi.app.R
 import com.patientbmi.app.data.model.PatientRegistrationRequest
 import com.patientbmi.app.data.remote.api.RetrofitInstance
+import com.patientbmi.app.ui.patient_listing.PatientListingActivity
 import com.patientbmi.app.ui.vitals.VitalsActivity
+import com.patientbmi.app.utils.BaseToastHelper
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
-/**
- * This screen captures essential patient demographic information required for
- * BMI tracking and clinical assessments.
- * Workflow:
- * 1. User enters patient demographic information
- * 2. Form validation ensures data completeness and correctness
- * 3. API call registers patient in backend system
- * 4. On success: Navigates to VitalsActivity for BMI measurement
- * 5. On failure: Displays error with opportunity to correct data
- *
- * Layout: activity_patient_registration.xml
- */
 class PatientRegistrationActivity : AppCompatActivity() {
 
-    // UI Component References
+    private lateinit var etPatientNo: EditText
     private lateinit var etFirstName: EditText
     private lateinit var etMiddleName: EditText
     private lateinit var etLastName: EditText
     private lateinit var rgGender: RadioGroup
     private lateinit var etDateOfBirth: EditText
+    private lateinit var etRegistrationDate: EditText
+    private lateinit var btnCancel: Button
     private lateinit var btnSubmit: Button
 
-    /**
-     * Initializes the activity layout, sets up UI components, configures
-     * default values, and attaches event listeners for form interaction.
-     */
+    private val TAG = "PatientRegistration"
+    private var isDestroyed = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_patient_registration)
 
-        // Initialize UI component references
+        Log.d(TAG, "=== PatientRegistrationActivity onCreate ===")
+
         initViews()
 
-        // Configure button click listener for form submission
+        // Set default dates
+        val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+        etRegistrationDate.setText(today)
+
+        if (etDateOfBirth.text.isEmpty()) {
+            val calendar = Calendar.getInstance()
+            calendar.add(Calendar.YEAR, -30)
+            val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+            etDateOfBirth.setText(dateFormat.format(calendar.time))
+        }
+
         btnSubmit.setOnClickListener {
             validateAndRegister()
         }
 
-        // Configure date picker for date of birth selection
-        etDateOfBirth.setOnClickListener {
-            showDatePicker()
+        btnCancel.setOnClickListener {
+            navigateToPatientListing()
         }
 
-        // Set sensible default date (30 years ago) for quick registration
-        setDefaultDate()
+        etDateOfBirth.setOnClickListener {
+            showDatePicker(etDateOfBirth)
+        }
+
+        etRegistrationDate.setOnClickListener {
+            showDatePicker(etRegistrationDate)
+        }
     }
 
-    /**
-     * Binds XML layout components to Kotlin properties using findViewById.
-     * Called in onCreate() after setContentView().
-     */
+    override fun onStart() {
+        super.onStart()
+        isDestroyed = false
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        Log.d(TAG, "=== PatientRegistrationActivity onDestroy ===")
+        isDestroyed = true
+        BaseToastHelper.cancelCurrentToast()
+    }
+
     private fun initViews() {
+        etPatientNo = findViewById(R.id.etPatientNo)
         etFirstName = findViewById(R.id.etFirstName)
         etMiddleName = findViewById(R.id.etMiddleName)
         etLastName = findViewById(R.id.etLastName)
         rgGender = findViewById(R.id.rgGender)
         etDateOfBirth = findViewById(R.id.etDateOfBirth)
+        etRegistrationDate = findViewById(R.id.etRegistrationDate)
+        btnCancel = findViewById(R.id.btnCancel)
         btnSubmit = findViewById(R.id.btnSubmit)
     }
 
-    /**
-     * Provides a sensible default for typical adult patients to reduce
-     * manual input. Date is formatted in ISO 8601 (yyyy-MM-dd) format.
-     */
-    private fun setDefaultDate() {
-        if (etDateOfBirth.text.isEmpty()) {
-            val calendar = Calendar.getInstance()
-            calendar.add(Calendar.YEAR, -30) // Set to 30 years ago
-            val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-            etDateOfBirth.setText(dateFormat.format(calendar.time))
-        }
-    }
+    private fun showDatePicker(editText: EditText) {
+        if (isDestroyed) return
 
-    /**
-     * Opens a native Android date picker pre-set to 30 years ago (typical adult).
-     * Formats the selected date in ISO 8601 format (yyyy-MM-dd) required by API.
-     */
-    private fun showDatePicker() {
         val calendar = Calendar.getInstance()
-        calendar.add(Calendar.YEAR, -30) // Default to 30 years ago
 
-        DatePickerDialog(
+        // If editing date of birth, default to 30 years ago
+        if (editText == etDateOfBirth) {
+            calendar.add(Calendar.YEAR, -30)
+        }
+
+        // Create DatePickerDialog with proper styling
+        val datePicker = DatePickerDialog(
             this,
+            R.style.DatePickerTheme, // Custom theme for better visibility
             { _, year, month, day ->
-                // Format as yyyy-MM-dd (ISO 8601)
                 val formattedDate = String.format("%04d-%02d-%02d", year, month + 1, day)
-                etDateOfBirth.setText(formattedDate)
+                editText.setText(formattedDate)
             },
             calendar.get(Calendar.YEAR),
             calendar.get(Calendar.MONTH),
             calendar.get(Calendar.DAY_OF_MONTH)
-        ).show()
+        )
+
+        // Set custom colors for better visibility
+        datePicker.datePicker.setBackgroundColor(Color.WHITE)
+
+        // Set the dialog title
+        datePicker.setTitle("Select Date")
+
+        // Set button colors
+        datePicker.getButton(DatePickerDialog.BUTTON_POSITIVE).setTextColor(Color.BLACK)
+        datePicker.getButton(DatePickerDialog.BUTTON_NEGATIVE).setTextColor(Color.BLACK)
+
+        datePicker.show()
     }
 
-    /**
-     * Validates form inputs and registers the patient via API.
-     * API Integration:
-     * - Uses Retrofit for network communication
-     * - Handles network errors and API error responses
-     * - Updates UI state during network operations
-     */
+    private fun navigateToPatientListing() {
+        Log.d(TAG, "=== Navigating to PatientListing ===")
+        BaseToastHelper.cancelCurrentToast()
+        val intent = Intent(this, PatientListingActivity::class.java)
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK)
+        startActivity(intent)
+        finish()
+    }
+
+    private fun navigateToVitals(patientId: String, patientName: String) {
+        Log.d(TAG, "=== Navigating to Vitals ===")
+        BaseToastHelper.cancelCurrentToast()
+        val intent = Intent(this, VitalsActivity::class.java)
+            .apply {
+                putExtra("patient_id", patientId)
+                putExtra("patient_name", patientName)
+                // Clear back stack
+                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+        startActivity(intent)
+        finish()
+    }
+
     private fun validateAndRegister() {
-        // Extract and trim input values
+        Log.d(TAG, "=== Starting registration ===")
+
+        if (isDestroyed) return
+
+        // Get values
+        val patientNo = etPatientNo.text.toString().trim()
         val firstName = etFirstName.text.toString().trim()
         val middleName = etMiddleName.text.toString().trim()
         val lastName = etLastName.text.toString().trim()
         val dateOfBirth = etDateOfBirth.text.toString().trim()
+        val registrationDate = etRegistrationDate.text.toString().trim()
 
-        // Validate gender selection
+        // Validate gender
         val genderId = rgGender.checkedRadioButtonId
         if (genderId == -1) {
-            Toast.makeText(this, "Please select gender", Toast.LENGTH_SHORT).show()
+            showToastSafe("Please select gender")
             return
         }
 
         // Validate required fields
-        if (firstName.isEmpty() || lastName.isEmpty() || dateOfBirth.isEmpty()) {
-            Toast.makeText(this, "Please fill all required fields", Toast.LENGTH_SHORT).show()
+        if (patientNo.isEmpty() || firstName.isEmpty() || lastName.isEmpty() ||
+            dateOfBirth.isEmpty() || registrationDate.isEmpty()) {
+            showToastSafe("Please fill all required fields")
             return
         }
 
-        // Validate date format (ISO 8601: yyyy-MM-dd)
-        if (!dateOfBirth.matches(Regex("\\d{4}-\\d{2}-\\d{2}"))) {
-            Toast.makeText(this, "Invalid date format. Use YYYY-MM-DD", Toast.LENGTH_SHORT).show()
-            return
+        // Get gender value - convert to single letter
+        val gender = when (genderId) {
+            R.id.rbMale -> "M"
+            R.id.rbFemale -> "F"
+            else -> "M"
         }
 
-        // Extract gender selection (M/F encoding)
-        val genderBtn = findViewById<RadioButton>(genderId)
-        val gender = if (genderBtn.text == "Male") "M" else "F"
+        Log.d(TAG, "Gender code: $gender")
 
-        // Create data transfer object
+        // Create request
         val patientRequest = PatientRegistrationRequest(
+            patientId = patientNo,
             firstName = firstName,
             middleName = if (middleName.isEmpty()) null else middleName,
             lastName = lastName,
             gender = gender,
-            dateOfBirth = dateOfBirth
+            dateOfBirth = dateOfBirth,
+            registrationDate = registrationDate
         )
 
-        // Launch coroutine for asynchronous network operation
+        Log.d(TAG, "Sending: $patientRequest")
+
+        // Disable button immediately
+        btnSubmit.isEnabled = false
+        btnSubmit.text = "Registering..."
+        btnCancel.isEnabled = false
+
         lifecycleScope.launch {
             try {
-                // Update UI state for network operation
-                btnSubmit.isEnabled = false
-                btnSubmit.text = "Registering..."
-
-                // Make API call
+                Log.d(TAG, "=== Making API call ===")
                 val response = RetrofitInstance.api.registerPatient(patientRequest)
 
-                // Handle API response
                 if (response.isSuccessful) {
                     val patient = response.body()!!
+                    Log.d(TAG, "Success: $patient")
 
-                    // Success: Show confirmation
-                    Toast.makeText(
-                        this@PatientRegistrationActivity,
-                        "Patient registered successfully!",
-                        Toast.LENGTH_SHORT
-                    ).show()
-
-                    // Navigate to vital sign collection for the new patient
-                    startActivity(
-                        Intent(
-                            this@PatientRegistrationActivity,
-                            VitalsActivity::class.java
-                        ).apply {
-                            putExtra("patient_id", patient.id)
-                            putExtra("patient_name", patient.fullName)
+                    runOnUiThread {
+                        if (isDestroyed || isFinishing) {
+                            Log.w(TAG, "Activity finishing, skipping navigation")
+                            return@runOnUiThread
                         }
-                    )
-                    finish() // Remove registration activity from back stack
+
+                        try {
+                            showToastSafe("Patient registered successfully!")
+                            // Navigate immediately without delay
+                            navigateToVitals(patient.id, "${patient.firstName} ${patient.lastName}")
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Error navigating: ${e.message}")
+                            resetSubmitButton()
+                        }
+                    }
+
                 } else {
-                    // API error response
-                    val error = response.errorBody()?.string() ?: "Registration failed"
-                    Toast.makeText(
-                        this@PatientRegistrationActivity,
-                        "Error: $error",
-                        Toast.LENGTH_LONG
-                    ).show()
+                    val errorBody = response.errorBody()?.string()
+                    Log.e(TAG, "API Error: $errorBody")
+
+                    runOnUiThread {
+                        if (isDestroyed || isFinishing) return@runOnUiThread
+                        resetSubmitButton()
+
+                        val errorMessage = when {
+                            response.code() == 400 -> "Bad request. Check your data."
+                            response.code() == 409 -> "Patient ID already exists."
+                            response.code() == 500 -> "Server error. Please try again."
+                            else -> "Registration failed: ${errorBody ?: "Unknown error"}"
+                        }
+
+                        showToastSafe(errorMessage)
+                    }
                 }
             } catch (e: Exception) {
-                // Network or unexpected error
-                Toast.makeText(
-                    this@PatientRegistrationActivity,
-                    "Network error: ${e.message}",
-                    Toast.LENGTH_LONG
-                ).show()
-            } finally {
-                // Restore UI state regardless of outcome
-                btnSubmit.isEnabled = true
-                btnSubmit.text = "Register Patient"
+                Log.e(TAG, "Exception: ${e.message}", e)
+
+                runOnUiThread {
+                    if (isDestroyed || isFinishing) return@runOnUiThread
+                    resetSubmitButton()
+                    showToastSafe("Network error: ${e.message}")
+                }
             }
         }
+    }
+
+    private fun resetSubmitButton() {
+        if (isDestroyed || isFinishing) return
+        btnSubmit.isEnabled = true
+        btnSubmit.text = "Register Patient"
+        btnCancel.isEnabled = true
+    }
+
+    private fun showToastSafe(message: String) {
+        BaseToastHelper.showToastFromActivity(this, message)
     }
 }

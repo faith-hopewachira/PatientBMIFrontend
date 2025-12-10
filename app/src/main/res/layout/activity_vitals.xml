@@ -1,13 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp">
+    android:background="@android:color/white">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <!-- Title -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Patient Vitals"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:textColor="#2E7D32"
+            android:layout_marginBottom="16dp" />
 
         <!-- Patient Name -->
         <TextView
@@ -15,148 +28,198 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Patient: Name"
-            android:textSize="20sp"
-            android:textStyle="bold"
+            android:textSize="18sp"
             android:gravity="center"
-            android:layout_marginBottom="24dp" />
+            android:textColor="#424242"
+            android:layout_marginBottom="32dp" />
 
         <!-- Height Input -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Height (cm)"
+            android:text="Height (cm) *"
             android:textSize="16sp"
-            android:layout_marginBottom="4dp" />
+            android:textColor="#424242"
+            android:layout_marginBottom="8dp" />
 
-        <EditText
-            android:id="@+id/etHeight"
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilHeight"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:inputType="numberDecimal"
-            android:hint="Enter height in centimeters"
-            android:layout_marginBottom="16dp" />
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_marginBottom="24dp"
+            app:hintEnabled="false">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etHeight"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Enter height in centimeters"
+                android:inputType="numberDecimal"
+                android:textSize="16sp" />
+
+        </com.google.android.material.textfield.TextInputLayout>
 
         <!-- Weight Input -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Weight (kg)"
+            android:text="Weight (kg) *"
             android:textSize="16sp"
-            android:layout_marginBottom="4dp" />
+            android:textColor="#424242"
+            android:layout_marginBottom="8dp" />
 
-        <EditText
-            android:id="@+id/etWeight"
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilWeight"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:inputType="numberDecimal"
-            android:hint="Enter weight in kilograms"
-            android:layout_marginBottom="32dp" />
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_marginBottom="32dp"
+            app:hintEnabled="false">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etWeight"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Enter weight in kilograms"
+                android:inputType="numberDecimal"
+                android:textSize="16sp" />
+
+        </com.google.android.material.textfield.TextInputLayout>
 
         <!-- BMI Display Card -->
-        <LinearLayout
+        <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="#E8F5E9"
-            android:padding="24dp"
-            android:layout_marginBottom="32dp"
-            android:gravity="center"
-            android:elevation="4dp">
+            app:cardCornerRadius="12dp"
+            app:cardElevation="4dp"
+            app:cardBackgroundColor="#F1F8E9"
+            android:layout_marginBottom="32dp">
 
-            <TextView
-                android:id="@+id/tvBmiValue"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="BMI: --"
-                android:textSize="32sp"
-                android:textStyle="bold"
-                android:textColor="#2E7D32" />
-
-            <TextView
-                android:id="@+id/tvBmiCategory"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Enter height &amp; weight"
-                android:textSize="20sp"
-                android:textStyle="bold"
-                android:layout_marginTop="8dp"
-                android:textColor="#666666" />
-
-            <!-- BMI Scale Reference -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginTop="24dp"
+                android:orientation="vertical"
+                android:padding="24dp"
                 android:gravity="center">
 
                 <TextView
+                    android:id="@+id/tvBmiValue"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Underweight"
-                    android:textSize="12sp"
-                    android:textColor="#FF9800"
-                    android:layout_marginEnd="8dp" />
+                    android:text="BMI: --"
+                    android:textSize="32sp"
+                    android:textStyle="bold"
+                    android:textColor="#2E7D32" />
 
                 <TextView
+                    android:id="@+id/tvBmiCategory"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="•"
-                    android:textSize="12sp"
+                    android:text="Enter height &amp; weight"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:layout_marginTop="8dp"
                     android:textColor="#666666" />
 
-                <TextView
-                    android:layout_width="wrap_content"
+                <!-- BMI Scale Reference - FIXED: Remove android:cornerRadius -->
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Normal"
-                    android:textSize="12sp"
-                    android:textColor="#4CAF50"
-                    android:layout_marginHorizontal="8dp" />
+                    android:orientation="horizontal"
+                    android:layout_marginTop="24dp"
+                    android:gravity="center"
+                    android:padding="8dp"
+                    android:background="#E8F5E9"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="8dp">
+                    <!-- Removed: android:cornerRadius="20dp" -->
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="•"
-                    android:textSize="12sp"
-                    android:textColor="#666666" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Underweight"
+                        android:textSize="12sp"
+                        android:textColor="#FF9800"
+                        android:layout_marginEnd="8dp" />
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Overweight"
-                    android:textSize="12sp"
-                    android:textColor="#FF5722"
-                    android:layout_marginHorizontal="8dp" />
+                    <View
+                        android:layout_width="1dp"
+                        android:layout_height="12dp"
+                        android:background="#BDBDBD"
+                        android:layout_marginHorizontal="4dp" />
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="•"
-                    android:textSize="12sp"
-                    android:textColor="#666666" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Normal"
+                        android:textSize="12sp"
+                        android:textColor="#4CAF50"
+                        android:layout_marginHorizontal="8dp" />
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Obese"
-                    android:textSize="12sp"
-                    android:textColor="#F44336"
-                    android:layout_marginStart="8dp" />
+                    <View
+                        android:layout_width="1dp"
+                        android:layout_height="12dp"
+                        android:background="#BDBDBD"
+                        android:layout_marginHorizontal="4dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Overweight"
+                        android:textSize="12sp"
+                        android:textColor="#FF5722"
+                        android:layout_marginHorizontal="8dp" />
+
+                    <View
+                        android:layout_width="1dp"
+                        android:layout_height="12dp"
+                        android:background="#BDBDBD"
+                        android:layout_marginHorizontal="4dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Obese"
+                        android:textSize="12sp"
+                        android:textColor="#F44336"
+                        android:layout_marginStart="8dp" />
+
+                </LinearLayout>
 
             </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_horizontal"
+            android:layout_marginTop="16dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCancel"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Cancel"
+                android:textSize="16sp"
+                android:layout_marginEnd="8dp"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                app:cornerRadius="8dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSubmit"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Submit Vitals"
+                android:textSize="16sp"
+                style="@style/Widget.MaterialComponents.Button"
+                app:cornerRadius="8dp" />
 
         </LinearLayout>
 
-        <!-- Submit Button -->
-        <Button
-            android:id="@+id/btnSubmit"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Submit Vitals"
-            android:textSize="16sp"
-            android:padding="16dp"
-            android:backgroundTint="#6200EE" />
-
     </LinearLayout>
-
 </ScrollView>

@@ -1,13 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp">
+    android:background="@android:color/white">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:padding="24dp">
 
         <TextView
             android:layout_width="match_parent"
@@ -16,7 +18,8 @@
             android:textSize="24sp"
             android:textStyle="bold"
             android:gravity="center"
-            android:layout_marginBottom="24dp"/>
+            android:textColor="#2E7D32"
+            android:layout_marginBottom="16dp" />
 
         <TextView
             android:id="@+id/tvPatientName"
@@ -25,22 +28,44 @@
             android:text="Patient Name"
             android:textSize="18sp"
             android:gravity="center"
-            android:layout_marginBottom="24dp"/>
-
-        <EditText
-            android:id="@+id/etVisitDate"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Visit Date (YYYY-MM-DD)"
-            android:layout_marginBottom="24dp"
-            android:focusable="false"
-            android:clickable="true"/>
+            android:textColor="#424242"
+            android:layout_marginBottom="32dp" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="General Health"
-            android:layout_marginBottom="8dp"/>
+            android:text="Visit Date (YYYY-MM-DD) *"
+            android:textSize="16sp"
+            android:textColor="#424242"
+            android:layout_marginBottom="8dp" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilVisitDate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_marginBottom="24dp"
+            app:hintEnabled="false">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etVisitDate"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Click to select date"
+                android:textSize="16sp"
+                android:textColor="@color/black"
+                android:focusable="false"
+                android:clickable="true" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="General Health *"
+            android:textSize="16sp"
+            android:textColor="#424242"
+            android:layout_marginBottom="8dp" />
 
         <RadioGroup
             android:id="@+id/rgGeneralHealth"
@@ -48,15 +73,36 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:layout_marginBottom="24dp">
-            <RadioButton android:id="@+id/rbGood" android:text="Good" android:layout_weight="1"/>
-            <RadioButton android:id="@+id/rbPoor" android:text="Poor" android:layout_weight="1"/>
+
+            <com.google.android.material.radiobutton.MaterialRadioButton
+                android:id="@+id/rbGood"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Good"
+                android:textSize="16sp"
+                android:textColor="@color/black"
+                android:buttonTint="#2E7D32"
+                android:layout_marginEnd="16dp" />
+
+            <com.google.android.material.radiobutton.MaterialRadioButton
+                android:id="@+id/rbPoor"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Poor"
+                android:textSize="16sp"
+                android:textColor="@color/black"
+                android:buttonTint="#2E7D32" />
         </RadioGroup>
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Are you currently using any drugs?"
-            android:layout_marginBottom="8dp"/>
+            android:text="Are you currently using any drugs? *"
+            android:textSize="16sp"
+            android:textColor="#424242"
+            android:layout_marginBottom="8dp" />
 
         <RadioGroup
             android:id="@+id/rgDrugUse"
@@ -64,24 +110,87 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:layout_marginBottom="24dp">
-            <RadioButton android:id="@+id/rbYes" android:text="Yes" android:layout_weight="1"/>
-            <RadioButton android:id="@+id/rbNo" android:text="No" android:layout_weight="1"/>
+
+            <com.google.android.material.radiobutton.MaterialRadioButton
+                android:id="@+id/rbYes"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Yes"
+                android:textSize="16sp"
+                android:textColor="@color/black"
+                android:buttonTint="#2E7D32"
+                android:layout_marginEnd="16dp" />
+
+            <com.google.android.material.radiobutton.MaterialRadioButton
+                android:id="@+id/rbNo"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="No"
+                android:textSize="16sp"
+                android:textColor="@color/black"
+                android:buttonTint="#2E7D32" />
         </RadioGroup>
 
-        <EditText
-            android:id="@+id/etComments"
-            android:layout_width="match_parent"
-            android:layout_height="100dp"
-            android:hint="Comments"
-            android:inputType="textMultiLine"
-            android:gravity="top"
-            android:layout_marginBottom="24dp"/>
-
-        <Button
-            android:id="@+id/btnSubmit"
+        <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Submit Assessment"/>
+            android:text="Comments *"
+            android:textSize="16sp"
+            android:textColor="#424242"
+            android:layout_marginBottom="8dp" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilComments"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_marginBottom="32dp">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etComments"
+                android:layout_width="match_parent"
+                android:layout_height="120dp"
+                android:hint="Enter comments"
+                android:textSize="16sp"
+                android:textColor="@color/black"
+                android:inputType="textMultiLine"
+                android:gravity="top"
+                android:maxLines="5"
+                android:minLines="3" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_horizontal"
+            android:layout_marginTop="16dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCancel"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Cancel"
+                android:textSize="16sp"
+                android:layout_marginEnd="8dp"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                app:cornerRadius="8dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSubmit"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Submit Assessment"
+                android:textSize="16sp"
+                style="@style/Widget.MaterialComponents.Button"
+                app:cornerRadius="8dp" />
+
+        </LinearLayout>
 
     </LinearLayout>
 </ScrollView>

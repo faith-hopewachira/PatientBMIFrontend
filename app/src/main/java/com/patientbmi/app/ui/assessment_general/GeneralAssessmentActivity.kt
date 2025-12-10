@@ -35,6 +35,7 @@ class GeneralAssessmentActivity : AppCompatActivity() {
     private lateinit var rgGeneralHealth: RadioGroup
     private lateinit var rgDrugUse: RadioGroup
     private lateinit var etComments: EditText
+    private lateinit var btnCancel: Button
     private lateinit var btnSubmit: Button
 
     // Data passed from previous activity
@@ -63,6 +64,7 @@ class GeneralAssessmentActivity : AppCompatActivity() {
 
         // Configure button click listeners
         btnSubmit.setOnClickListener { submitAssessment() }
+        btnCancel.setOnClickListener { navigateToPatientListing() }
         etVisitDate.setOnClickListener { showDatePicker() }
     }
 
@@ -77,6 +79,7 @@ class GeneralAssessmentActivity : AppCompatActivity() {
         rgGeneralHealth = findViewById(R.id.rgGeneralHealth)
         rgDrugUse = findViewById(R.id.rgDrugUse)
         etComments = findViewById(R.id.etComments)
+        btnCancel = findViewById(R.id.btnCancel)
         btnSubmit = findViewById(R.id.btnSubmit)
     }
 
@@ -98,6 +101,15 @@ class GeneralAssessmentActivity : AppCompatActivity() {
             calendar.get(Calendar.MONTH),
             calendar.get(Calendar.DAY_OF_MONTH)
         ).show()
+    }
+
+    /**
+     * Navigates back to patient listing screen.
+     * Called when Cancel button is clicked.
+     */
+    private fun navigateToPatientListing() {
+        startActivity(android.content.Intent(this, PatientListingActivity::class.java))
+        finish()
     }
 
     /**
@@ -126,6 +138,7 @@ class GeneralAssessmentActivity : AppCompatActivity() {
         val generalHealthId = rgGeneralHealth.checkedRadioButtonId
         val drugUseId = rgDrugUse.checkedRadioButtonId
 
+
         // Validate all required fields
         if (visitDate.isEmpty() || generalHealthId == -1 || drugUseId == -1 || comments.isEmpty()) {
             Toast.makeText(this, "All fields are required", Toast.LENGTH_SHORT).show()
@@ -148,8 +161,9 @@ class GeneralAssessmentActivity : AppCompatActivity() {
         // Launch coroutine for network operation
         lifecycleScope.launch {
             try {
-                // Disable button to prevent duplicate submissions
+                // Disable buttons to prevent duplicate submissions
                 btnSubmit.isEnabled = false
+                btnCancel.isEnabled = false
 
                 // Make network call
                 val response = RetrofitInstance.api.submitGeneralAssessment(assessment)
@@ -189,10 +203,10 @@ class GeneralAssessmentActivity : AppCompatActivity() {
                     Toast.LENGTH_LONG
                 ).show()
             } finally {
-                // Always re-enable submit button
+                // Always re-enable buttons
                 btnSubmit.isEnabled = true
+                btnCancel.isEnabled = true
             }
         }
     }
 }
-

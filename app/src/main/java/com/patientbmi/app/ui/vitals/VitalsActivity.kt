@@ -2,8 +2,6 @@ package com.patientbmi.app.ui.vitals
 
 import android.content.Intent
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.Log
@@ -15,118 +13,107 @@ import com.patientbmi.app.data.model.PatientVital
 import com.patientbmi.app.data.remote.api.RetrofitInstance
 import com.patientbmi.app.ui.assessment_general.GeneralAssessmentActivity
 import com.patientbmi.app.ui.assessment_overweight.OverweightAssessmentActivity
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
+import com.patientbmi.app.ui.patient_listing.PatientListingActivity
+import com.patientbmi.app.utils.BaseToastHelper
+import kotlinx.coroutines.*
+import java.io.IOException
+import java.net.ConnectException
+import java.net.SocketTimeoutException
 import java.text.SimpleDateFormat
 import java.util.*
 
-/**
- * This screen is a critical component in the patient assessment workflow where
- * healthcare providers input height and weight measurements.
- * Workflow Logic:
- * 1. Receives patient data from registration or patient listing
- * 2. User enters height (cm) and weight (kg)
- * 3. BMI is calculated and displayed in real-time
- * 4. User submits data to backend API
- * 5. Based on BMI category, navigates to appropriate assessment form
- *
- * Layout: activity_vitals.xml
- */
 class VitalsActivity : AppCompatActivity() {
 
-    // UI Component References
     private lateinit var tvPatientName: TextView
     private lateinit var etHeight: EditText
     private lateinit var etWeight: EditText
     private lateinit var tvBmiValue: TextView
     private lateinit var tvBmiCategory: TextView
+    private lateinit var btnCancel: Button
     private lateinit var btnSubmit: Button
 
-    // Patient data passed from previous activity
     private lateinit var patientId: String
     private lateinit var patientName: String
 
-    // Logging and async operation management
     private val TAG = "VitalsActivity"
     private var submitJob: Job? = null
-    private val handler = Handler(Looper.getMainLooper())
+    private var activityDestroyed = false
+    private val activityId = UUID.randomUUID().toString().substring(0, 8)
 
-    /**
-     * Initializes the activity, validates incoming patient data,
-     * sets up UI components, and configures event listeners.
-     * Data Validation:
-     * - Ensures patient_id and patient_name are provided
-     * - Logs diagnostic information for debugging
-     * - Finishes activity if patient data is missing
-     */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_vitals)
 
-        Log.d(TAG, "=== VitalsActivity onCreate ===")
+        Log.d(TAG, "=== VitalsActivity [$activityId] onCreate ===")
 
-        // Extract patient data from Intent
         patientId = intent.getStringExtra("patient_id").orEmpty()
         patientName = intent.getStringExtra("patient_name").orEmpty()
 
         Log.d(TAG, "Patient ID: $patientId, Name: $patientName")
 
-        // Validate essential patient data
         if (patientId.isEmpty()) {
             Log.e(TAG, "No patient ID provided!")
-            showToast("Error: No patient data")
+            showToastSafe("Error: No patient data")
             finish()
             return
         }
 
-        // Initialize UI and event handlers
         initViews()
         setupListeners()
     }
 
-    /**
-     * Cleans up resources to prevent memory leaks:
-     * - Cancels any ongoing API calls
-     * - Removes pending handler callbacks
-     */
-    override fun onDestroy() {
-        super.onDestroy()
-        Log.d(TAG, "=== VitalsActivity onDestroy ===")
-        // Cancel any ongoing API call
-        submitJob?.cancel()
-        // Remove any pending callbacks
-        handler.removeCallbacksAndMessages(null)
+    override fun onStart() {
+        super.onStart()
+        Log.d(TAG, "=== VitalsActivity [$activityId] onStart ===")
+        activityDestroyed = false
     }
 
-    /**
-     * Handles back button press with logging.
-     */
+    override fun onResume() {
+        super.onResume()
+        Log.d(TAG, "=== VitalsActivity [$activityId] onResume ===")
+    }
+
+    override fun onPause() {
+        super.onPause()
+        Log.d(TAG, "=== VitalsActivity [$activityId] onPause ===")
+    }
+
+    override fun onStop() {
+        super.onStop()
+        Log.d(TAG, "=== VitalsActivity [$activityId] onStop ===")
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        activityDestroyed = true
+        submitJob?.cancel("Activity destroyed")
+        BaseToastHelper.cancelCurrentToast()  // Add this line
+    }
+
     override fun onBackPressed() {
-        Log.d(TAG, "onBackPressed called")
+        Log.d(TAG, "=== VitalsActivity [$activityId] onBackPressed ===")
+        if (submitJob?.isActive == true) {
+            Log.w(TAG, "Back pressed while submitting")
+            showToastSafe("Please wait for submission to complete")
+            return
+        }
         super.onBackPressed()
     }
 
-    /**
-     * Binds XML layout components to Kotlin properties and sets
-     * initial display values for BMI fields.
-     */
     private fun initViews() {
         tvPatientName = findViewById(R.id.tvPatientName)
         etHeight = findViewById(R.id.etHeight)
         etWeight = findViewById(R.id.etWeight)
         tvBmiValue = findViewById(R.id.tvBmiValue)
         tvBmiCategory = findViewById(R.id.tvBmiCategory)
+        btnCancel = findViewById(R.id.btnCancel)
         btnSubmit = findViewById(R.id.btnSubmit)
 
-        // Set patient name for context
         tvPatientName.text = "Patient: $patientName"
-
-        // Initialize BMI display with placeholder values
         updateBmiDisplay(0.0, "Enter height & weight")
     }
 
     private fun setupListeners() {
-        // Calculate BMI whenever height or weight changes
         val textWatcher = object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
@@ -139,19 +126,39 @@ class VitalsActivity : AppCompatActivity() {
         etWeight.addTextChangedListener(textWatcher)
 
         btnSubmit.setOnClickListener {
-            Log.d(TAG, "Submit button clicked")
+            Log.d(TAG, "=== Submit button clicked [$activityId] ===")
+            if (submitJob?.isActive == true) {
+                Log.w(TAG, "Submission already in progress")
+                showToastSafe("Submission in progress...")
+                return@setOnClickListener
+            }
             submitVitals()
+        }
+
+        btnCancel.setOnClickListener {
+            Log.d(TAG, "=== Cancel button clicked [$activityId] ===")
+            if (submitJob?.isActive == true) {
+                Log.w(TAG, "Cancelling submission...")
+                submitJob?.cancel("User cancelled")
+                resetUIState()
+                showToastSafe("Submission cancelled")
+            }
+            navigateToPatientListing()
         }
     }
 
-    /**
-     * Calculates and displays BMI based on current input values.
-     */
+    private fun navigateToPatientListing() {
+        Log.d(TAG, "=== Navigating to patient listing [$activityId] ===")
+        val intent = Intent(this, PatientListingActivity::class.java)
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK)
+        startActivity(intent)
+        finish()
+    }
+
     private fun calculateAndDisplayBmi() {
         val heightText = etHeight.text.toString().trim()
         val weightText = etWeight.text.toString().trim()
 
-        // Handle empty inputs
         if (heightText.isEmpty() || weightText.isEmpty()) {
             updateBmiDisplay(0.0, "Enter height & weight")
             return
@@ -161,16 +168,13 @@ class VitalsActivity : AppCompatActivity() {
             val height = heightText.toDouble()
             val weight = weightText.toDouble()
 
-            // Validate positive values
             if (height <= 0 || weight <= 0) {
                 updateBmiDisplay(0.0, "Invalid values")
                 return
             }
 
-            // Calculate BMI and category
             val bmi = calculateBmi(height, weight)
             val category = getBmiCategory(bmi)
-
             updateBmiDisplay(bmi, category)
 
         } catch (e: NumberFormatException) {
@@ -178,20 +182,12 @@ class VitalsActivity : AppCompatActivity() {
         }
     }
 
-    /**
-     * Calculates BMI from height (cm) and weight (kg).
-     * Formula: BMI = weight(kg) / (height(m)²)
-     */
     private fun calculateBmi(heightCm: Double, weightKg: Double): Double {
         val heightM = heightCm / 100.0
         val bmi = weightKg / (heightM * heightM)
-        // Round to 1 decimal place
         return String.format("%.1f", bmi).toDouble()
     }
 
-    /**
-     * Determines WHO BMI category based on BMI value.
-     */
     private fun getBmiCategory(bmi: Double): String {
         return when {
             bmi < 18.5 -> "Underweight"
@@ -201,47 +197,45 @@ class VitalsActivity : AppCompatActivity() {
         }
     }
 
-    /**
-     * Updates the BMI display with calculated values and color coding.
-     */
     private fun updateBmiDisplay(bmi: Double, category: String) {
         runOnUiThread {
-            if (bmi > 0) {
-                tvBmiValue.text = String.format("BMI: %.1f", bmi)
-                tvBmiCategory.text = category
+            if (activityDestroyed || isFinishing) {
+                Log.w(TAG, "updateBmiDisplay called on destroyed activity")
+                return@runOnUiThread
+            }
 
-                // Apply color coding based on category
-                val color = when (category) {
-                    "Underweight" -> resources.getColor(android.R.color.holo_orange_light, null)
-                    "Normal" -> resources.getColor(android.R.color.holo_green_light, null)
-                    "Overweight" -> resources.getColor(android.R.color.holo_orange_dark, null)
-                    "Obese" -> resources.getColor(android.R.color.holo_red_light, null)
-                    else -> resources.getColor(android.R.color.black, null)
+            try {
+                if (bmi > 0) {
+                    tvBmiValue.text = String.format("BMI: %.1f", bmi)
+                    tvBmiCategory.text = category
+
+                    val color = when (category) {
+                        "Underweight" -> getColor(android.R.color.holo_orange_light)
+                        "Normal" -> getColor(android.R.color.holo_green_light)
+                        "Overweight" -> getColor(android.R.color.holo_orange_dark)
+                        "Obese" -> getColor(android.R.color.holo_red_light)
+                        else -> getColor(android.R.color.black)
+                    }
+                    tvBmiCategory.setTextColor(color)
+                } else {
+                    tvBmiValue.text = "BMI: --"
+                    tvBmiCategory.text = category
+                    tvBmiCategory.setTextColor(getColor(android.R.color.darker_gray))
                 }
-                tvBmiCategory.setTextColor(color)
-
-            } else {
-                // Show placeholder values
-                tvBmiValue.text = "BMI: --"
-                tvBmiCategory.text = category
-                tvBmiCategory.setTextColor(resources.getColor(android.R.color.darker_gray, null))
+            } catch (e: Exception) {
+                Log.e(TAG, "Error updating BMI display: ${e.message}")
             }
         }
     }
 
-    /**
-     * Validates and submits vital measurements to the backend API.
-     * Performs comprehensive validation and makes an asynchronous API call.
-     */
     private fun submitVitals() {
-        Log.d(TAG, "=== submitVitals called ===")
+        Log.d(TAG, "=== submitVitals called [$activityId] ===")
 
         val heightText = etHeight.text.toString().trim()
         val weightText = etWeight.text.toString().trim()
 
-        // Basic validation
         if (heightText.isEmpty() || weightText.isEmpty()) {
-            showToast("Please enter height and weight")
+            showToastSafe("Please enter height and weight")
             return
         }
 
@@ -249,22 +243,17 @@ class VitalsActivity : AppCompatActivity() {
             val height = heightText.toDouble()
             val weight = weightText.toDouble()
 
-            // Range validation
             if (height <= 0 || weight <= 0) {
-                showToast("Height and weight must be positive numbers")
+                showToastSafe("Height and weight must be positive numbers")
                 return
             }
 
-            // Calculate BMI and category
             val bmi = calculateBmi(height, weight)
             val bmiCategory = getBmiCategory(bmi)
-
-            // Format current date for visit
             val visitDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
 
             Log.d(TAG, "Creating PatientVital: height=$height, weight=$weight, bmi=$bmi, category=$bmiCategory")
 
-            // Create data transfer object
             val patientVital = PatientVital(
                 patientId = patientId,
                 visitDate = visitDate,
@@ -274,159 +263,173 @@ class VitalsActivity : AppCompatActivity() {
                 bmiStatus = bmiCategory
             )
 
-            // Update UI state to prevent multiple submissions
-            btnSubmit.isEnabled = false
-            btnSubmit.text = "Submitting..."
+            // Update UI state
+            updateUIForSubmission(true)
 
-            // Launch coroutine for asynchronous API call
+            // Launch coroutine with timeout
             submitJob = lifecycleScope.launch {
                 try {
-                    Log.d(TAG, "Starting API call...")
+                    Log.d(TAG, "=== Starting API call [$activityId] ===")
 
-                    val response = RetrofitInstance.api.submitVitals(patientVital)
+                    val response = withTimeout(15000) {
+                        withContext(Dispatchers.IO) {
+                            RetrofitInstance.api.submitVitals(patientVital)
+                        }
+                    }
 
-                    Log.d(TAG, "API response received. Success: ${response.isSuccessful}")
-                    Log.d(TAG, "Response code: ${response.code()}")
+                    Log.d(TAG, "=== API response received [$activityId] ===")
+                    Log.d(TAG, "Success: ${response.isSuccessful}, Code: ${response.code()}")
 
                     if (response.isSuccessful) {
-                        Log.d(TAG, "Vitals submitted successfully!")
+                        Log.d(TAG, "=== Vitals submitted successfully! [$activityId] ===")
+                        showToastSafe("Vitals recorded successfully!")
 
-                        runOnUiThread {
-                            showToast("Vitals recorded successfully!")
+                        val nextForm = if (bmi >= 25) "overweight" else "general"
+                        Log.d(TAG, "BMI: $bmi, Next form: $nextForm")
 
-                            // Determine next assessment form based on BMI
-                            val nextForm = if (bmi >= 25) "overweight" else "general"
-                            Log.d(TAG, "BMI: $bmi, Next form: $nextForm")
-
-                            // Add delay for better UX before navigation
-                            handler.postDelayed({
-                                navigateToNextForm(nextForm, bmi)
-                            }, 500)
-                        }
+                        // Navigate immediately without delay
+                        navigateToNextForm(nextForm, bmi)
 
                     } else {
-                        // Handle API error response
-                        val errorBody = response.errorBody()?.string()
-                        Log.e(TAG, "API Error: $errorBody")
-                        Log.e(TAG, "Error code: ${response.code()}")
-
-                        runOnUiThread {
-                            btnSubmit.isEnabled = true
-                            btnSubmit.text = "Submit Vitals"
-
-                            // User-friendly error messages
-                            val errorMessage = if (errorBody?.contains("bmi") == true) {
-                                "BMI value error. Please check your values."
-                            } else if (errorBody?.contains("5 digits") == true) {
-                                "Value too precise. Please use whole numbers or 1 decimal place."
-                            } else {
-                                "Failed to submit vitals. Please try again."
-                            }
-
-                            showToast(errorMessage)
-                        }
+                        handleApiError(response)
                     }
+                } catch (e: TimeoutCancellationException) {
+                    handleNetworkError("Request timed out. Please try again.")
+                } catch (e: SocketTimeoutException) {
+                    handleNetworkError("Connection timeout. Please try again.")
+                } catch (e: ConnectException) {
+                    handleNetworkError("Cannot connect to server. Check your internet.")
+                } catch (e: IOException) {
+                    handleNetworkError("Network error. Please check connection.")
+                } catch (e: CancellationException) {
+                    Log.w(TAG, "=== Submission cancelled [$activityId]: ${e.message} ===")
+                    // Don't show toast for cancellation
                 } catch (e: Exception) {
-                    // Handle network or unexpected errors
-                    Log.e(TAG, "Network/Exception error: ${e.message}", e)
-
-                    runOnUiThread {
-                        btnSubmit.isEnabled = true
-                        btnSubmit.text = "Submit Vitals"
-                        showToast("Network error: ${e.message ?: "Unknown error"}")
-                    }
+                    Log.e(TAG, "=== Unexpected error [$activityId]: ${e.message}", e)
+                    handleNetworkError("An unexpected error occurred")
                 }
             }
 
         } catch (e: NumberFormatException) {
             Log.e(TAG, "Number format error: ${e.message}")
-            showToast("Please enter valid numbers")
+            showToastSafe("Please enter valid numbers")
+            updateUIForSubmission(false)
         } catch (e: Exception) {
             Log.e(TAG, "Unexpected error in submitVitals: ${e.message}", e)
-            showToast("An unexpected error occurred")
-            btnSubmit.isEnabled = true
-            btnSubmit.text = "Submit Vitals"
+            showToastSafe("An unexpected error occurred")
+            updateUIForSubmission(false)
         }
     }
 
-    /**
-     * Navigates to the appropriate assessment form based on BMI category.
-     * Navigation Logic:
-     * - BMI < 25: GeneralAssessmentActivity
-     * - BMI ≥ 25: OverweightAssessmentActivity
-     */
-    private fun navigateToNextForm(nextForm: String, bmi: Double) {
-        Log.d(TAG, "navigateToNextForm: $nextForm, BMI: $bmi")
+    private suspend fun handleApiError(response: retrofit2.Response<*>) {
+        withContext(Dispatchers.Main) {
+            if (activityDestroyed || isFinishing) return@withContext
 
-        try {
-            // Safety check to prevent navigation on destroyed activity
-            if (isFinishing || isDestroyed) {
-                Log.w(TAG, "Activity is finishing/destroyed, not navigating")
-                return
+            val errorBody = response.errorBody()?.string()?.take(200)
+            Log.e(TAG, "=== API Error [$activityId]: $errorBody ===")
+
+            val errorMessage = when {
+                response.code() == 401 -> "Session expired. Please login again."
+                response.code() == 403 -> "Access denied."
+                response.code() == 404 -> "Service not found."
+                response.code() == 500 -> "Server error. Please try again later."
+                response.code() == 503 -> "Service unavailable."
+                errorBody?.contains("bmi", ignoreCase = true) == true ->
+                    "BMI value error. Please check your values."
+                errorBody?.contains("5 digits", ignoreCase = true) == true ->
+                    "Value too precise. Please use whole numbers or 1 decimal place."
+                else -> "Failed to submit vitals (Error ${response.code()})."
             }
 
-            when (nextForm) {
-                "overweight" -> {
-                    Log.d(TAG, "Starting OverweightAssessmentActivity")
-                    val intent = Intent(this, OverweightAssessmentActivity::class.java)
-                    intent.putExtra("patient_id", patientId)
-                    intent.putExtra("patient_name", patientName)
-                    intent.putExtra("bmi", bmi)
-                    startActivity(intent)
-                }
-                "general" -> {
-                    Log.d(TAG, "Starting GeneralAssessmentActivity")
-                    val intent = Intent(this, GeneralAssessmentActivity::class.java)
-                    intent.putExtra("patient_id", patientId)
-                    intent.putExtra("patient_name", patientName)
-                    intent.putExtra("bmi", bmi)
-                    startActivity(intent)
-                }
-            }
-
-            // Finish current activity after successful navigation
-            Log.d(TAG, "Finishing VitalsActivity")
-            finish()
-
-        } catch (e: Exception) {
-            Log.e(TAG, "Error in navigateToNextForm: ${e.message}", e)
-            // Safe finish even if navigation fails
-            if (!isFinishing && !isDestroyed) {
-                finish()
-            }
+            showToastSafe(errorMessage)
+            updateUIForSubmission(false)
         }
     }
 
+    private suspend fun handleNetworkError(message: String) {
+        withContext(Dispatchers.Main) {
+            if (activityDestroyed || isFinishing) return@withContext
+            showToastSafe(message)
+            updateUIForSubmission(false)
+        }
+    }
 
-    private fun showToast(message: String) {
+    private fun updateUIForSubmission(submitting: Boolean) {
         runOnUiThread {
-            if (!isFinishing && !isDestroyed) {
-                Toast.makeText(this@VitalsActivity, message, Toast.LENGTH_SHORT).show()
+            if (activityDestroyed || isFinishing) {
+                Log.w(TAG, "updateUIForSubmission called on destroyed activity")
+                return@runOnUiThread
+            }
+
+            try {
+                if (submitting) {
+                    btnSubmit.isEnabled = false
+                    btnSubmit.text = "Submitting..."
+                    btnCancel.isEnabled = false
+                    btnCancel.text = "Cancel"
+                } else {
+                    btnSubmit.isEnabled = true
+                    btnSubmit.text = "Submit Vitals"
+                    btnCancel.isEnabled = true
+                    btnCancel.text = "Cancel"
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error updating UI state: ${e.message}")
             }
         }
     }
 
-    private fun testWithoutApi() {
-        Log.d(TAG, "=== Testing without API call ===")
+    private fun resetUIState() {
+        updateUIForSubmission(false)
+    }
 
-        btnSubmit.isEnabled = false
-        btnSubmit.text = "Testing..."
+    private fun navigateToNextForm(nextForm: String, bmi: Double) {
+        Log.d(TAG, "=== navigateToNextForm [$activityId]: $nextForm, BMI: $bmi ===")
 
-        // Simulate API delay
-        handler.postDelayed({
-            runOnUiThread {
-                showToast("Test successful (no API call)")
-                btnSubmit.isEnabled = true
-                btnSubmit.text = "Submit Vitals"
-
-                // Try to finish after delay
-                handler.postDelayed({
-                    Log.d(TAG, "Finishing after test")
-                    if (!isFinishing && !isDestroyed) {
-                        finish()
-                    }
-                }, 1000)
+        runOnUiThread {
+            if (activityDestroyed || isFinishing) {
+                Log.w(TAG, "Activity already destroyed, skipping navigation")
+                return@runOnUiThread
             }
-        }, 2000)
+
+            try {
+                // Cancel any current toast before navigation
+                BaseToastHelper.cancelCurrentToast()
+
+                // Create intent based on next form
+                val intent = when (nextForm) {
+                    "overweight" -> {
+                        Intent(this@VitalsActivity, OverweightAssessmentActivity::class.java).apply {
+                            putExtra("patient_id", patientId)
+                            putExtra("patient_name", patientName)
+                            putExtra("bmi", bmi)
+                        }
+                    }
+                    else -> {
+                        Intent(this@VitalsActivity, GeneralAssessmentActivity::class.java).apply {
+                            putExtra("patient_id", patientId)
+                            putExtra("patient_name", patientName)
+                            putExtra("bmi", bmi)
+                        }
+                    }
+                }
+
+                // Clear back stack
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK)
+
+                // Start activity
+                startActivity(intent)
+                finish()
+
+            } catch (e: Exception) {
+                Log.e(TAG, "=== Error navigating to next form [$activityId]: ${e.message}", e)
+                showToastSafe("Error navigating to next screen")
+                resetUIState()
+            }
+        }
+    }
+
+    private fun showToastSafe(message: String) {
+        BaseToastHelper.showToastFromActivity(this, message)
     }
 }

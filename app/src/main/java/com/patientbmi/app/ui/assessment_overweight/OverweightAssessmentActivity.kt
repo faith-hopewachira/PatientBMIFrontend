@@ -36,6 +36,7 @@ class OverweightAssessmentActivity : AppCompatActivity() {
     private lateinit var rgGeneralHealth: RadioGroup
     private lateinit var rgDietHistory: RadioGroup
     private lateinit var etComments: EditText
+    private lateinit var btnCancel: Button
     private lateinit var btnSubmit: Button
 
     // Patient data received from previous activity
@@ -69,6 +70,7 @@ class OverweightAssessmentActivity : AppCompatActivity() {
 
         // Configure event listeners
         btnSubmit.setOnClickListener { submitAssessment() }
+        btnCancel.setOnClickListener { navigateToPatientListing() }
         etVisitDate.setOnClickListener { showDatePicker() }
     }
 
@@ -84,6 +86,7 @@ class OverweightAssessmentActivity : AppCompatActivity() {
         rgGeneralHealth = findViewById(R.id.rgGeneralHealth)
         rgDietHistory = findViewById(R.id.rgDietHistory)
         etComments = findViewById(R.id.etComments)
+        btnCancel = findViewById(R.id.btnCancel)
         btnSubmit = findViewById(R.id.btnSubmit)
     }
 
@@ -105,6 +108,15 @@ class OverweightAssessmentActivity : AppCompatActivity() {
             calendar.get(Calendar.MONTH),
             calendar.get(Calendar.DAY_OF_MONTH)
         ).show()
+    }
+
+    /**
+     * Navigates back to patient listing screen.
+     * Called when Cancel button is clicked.
+     */
+    private fun navigateToPatientListing() {
+        startActivity(android.content.Intent(this, PatientListingActivity::class.java))
+        finish()
     }
 
     /**
@@ -154,8 +166,9 @@ class OverweightAssessmentActivity : AppCompatActivity() {
         // Launch coroutine for asynchronous network operation
         lifecycleScope.launch {
             try {
-                // Disable submit button to prevent duplicate submissions
+                // Disable buttons to prevent duplicate submissions
                 btnSubmit.isEnabled = false
+                btnCancel.isEnabled = false
 
                 // Make API call
                 val response = RetrofitInstance.api.submitOverweightAssessment(assessment)
@@ -195,8 +208,9 @@ class OverweightAssessmentActivity : AppCompatActivity() {
                     Toast.LENGTH_LONG
                 ).show()
             } finally {
-                // Always re-enable submit button regardless of outcome
+                // Always re-enable buttons regardless of outcome
                 btnSubmit.isEnabled = true
+                btnCancel.isEnabled = true
             }
         }
     }

@@ -7,28 +7,45 @@
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
-        android:label="Patient BMI App"
-        android:roundIcon="@mipmap/ic_launcher_round"
+        android:label="@string/app_name"
+        android:theme="@style/Theme.PatientBMIApp"
+        android:networkSecurityConfig="@xml/network_security_config"
         android:supportsRtl="true"
-        android:theme="@style/Theme.AppCompat.Light.NoActionBar"
-        android:usesCleartextTraffic="true"
-        tools:targetApi="31">
+        tools:targetApi="31"
+        tools:replace="android:theme"
+        android:hardwareAccelerated="true">
 
+        <!-- LAUNCHER activity -->
         <activity
             android:name=".ui.patient_registration.PatientRegistrationActivity"
             android:exported="true"
-            android:windowSoftInputMode="adjustResize">
+            android:launchMode="singleTask">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
-        <activity android:name=".ui.vitals.VitalsActivity" />
-        <activity android:name=".ui.assessment_overweight.OverweightAssessmentActivity" />
-        <activity android:name=".ui.assessment_general.GeneralAssessmentActivity" />
-        <activity android:name=".ui.patient_listing.PatientListingActivity" />
+        <!-- Other activities -->
+        <activity
+            android:name=".ui.vitals.VitalsActivity"
+            android:exported="false"
+            android:launchMode="singleTask"/>
 
+        <activity
+            android:name=".ui.patient_listing.PatientListingActivity"
+            android:exported="false"
+            android:launchMode="singleTask"/>
+
+        <activity
+            android:name=".ui.assessment_general.GeneralAssessmentActivity"
+            android:exported="false"
+            android:launchMode="singleTask"/>
+
+        <activity
+            android:name=".ui.assessment_overweight.OverweightAssessmentActivity"
+            android:exported="false"
+            android:launchMode="singleTask"/>
     </application>
 
 </manifest>

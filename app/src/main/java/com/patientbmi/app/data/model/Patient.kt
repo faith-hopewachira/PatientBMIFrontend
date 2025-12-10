@@ -52,12 +52,11 @@ data class Patient(
     val registrationDate: String,
 
     @SerializedName("full_name")
-    val fullName: String,
+    val fullName: String? = null,
 
     @SerializedName("age")
-    val age: Int
+    val age: Int? = null
 )
-
 /**
 
  * Patient model represents the input data when registering a new patient,
@@ -74,6 +73,9 @@ data class Patient(
  */
 
 data class PatientRegistrationRequest(
+    @SerializedName("patient_id")
+    val patientId: String? = null,  // Make sure this matches your EditText
+
     @SerializedName("first_name")
     val firstName: String,
 
@@ -87,5 +89,8 @@ data class PatientRegistrationRequest(
     val gender: String,
 
     @SerializedName("date_of_birth")
-    val dateOfBirth: String
+    val dateOfBirth: String,
+
+    @SerializedName("registration_date")
+    val registrationDate: String? = null
 )
